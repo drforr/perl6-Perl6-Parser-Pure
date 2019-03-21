@@ -19,8 +19,27 @@ my $*FALL-THROUGH      = True;
 ok $ppp.to-tree( Q{} ),        Q{'' (the empty file)};
 ok $ppp.to-tree( Q{;} ),       Q{';'};
 dies-ok { $ppp.to-tree( Q{:} ) },      Q{':' fails};
-ok $ppp.to-tree( Q{use v6} ),  Q{'use v6'};
-ok $ppp.to-tree( Q{use v6;} ), Q{'use v6;'};
+
+subtest 'version', {
+  ok $ppp.to-tree( Q{use v6} ),  Q{'use v6'};
+  ok $ppp.to-tree( Q{use v6;} ), Q{'use v6;'};
+
+  done-testing;
+};
+
 ok $ppp.to-tree( Q{loop {}} ), Q{'loop {}'};
+
+subtest 'require', {
+  ok $ppp.to-tree( Q{require Module} ),
+     Q{'require Module'};
+  ok $ppp.to-tree( Q{require My::Module} ),
+     Q{'require My::Module'};
+  ok $ppp.to-tree( Q{require Module;} ),
+     Q{'require Module;'};
+  ok $ppp.to-tree( Q{require My::Module} ),
+     Q{'require My::Module;'};
+
+  done-testing;
+};
 
 # vim: ft=perl6

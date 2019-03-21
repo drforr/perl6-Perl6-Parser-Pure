@@ -194,7 +194,7 @@ grammar Perl6::Parser::Pure::Grammar
     }
   # }}}
 
-  # {{{ identifier
+  # {{{ apostrophe
   token apostrophe
     {
     <[ ' \- ]>
@@ -315,6 +315,48 @@ grammar Perl6::Parser::Pure::Grammar
     [ <?[{]> || <.missing_block( #`{ $borg, $has_mystery } )>]
     <.newpad>
     <blockoid>
+    }
+  # }}}
+
+  # {{{ longname
+  token longname
+    {
+    <name> {} [ <?before ':' <.+alpha+[\< \[ \« ]>> <!RESTRICTED> <colonpair> ]*
+    }
+  # }}}
+
+  # {{{ morename
+  token morename
+    {
+  # :my $*QSIGIL := '';
+    '::'
+      [
+      || <?before '(' | <.alpha> >
+           [
+           | <identifier>
+   #       | :dba('indirect name') '(' ~ ')' [ <.ws> <EXPR> ]
+           ]
+   #  || <?before '::'> <.typed_panic: "X::Syntax::Name::Null">
+   #  || $<bad>=[<.sigil><.identifier>] { my str $b := $<bad>; self.malformed("lookup of ::$b; please use ::('$b'), ::\{'$b'\}, or ::<$b>") }
+      ]?
+  }
+  # }}}
+
+  # {{{ name
+  token name
+    {
+      [
+      | <identifier> <morename>*
+  #   | <morename>+
+      ]
+    }
+  # }}}
+
+  # {{{ module_name
+  token module_name
+    {
+    <longname>
+  # [ <?[[]> :dba('generic role') '[' ~ ']' <arglist> ]?
     }
   # }}}
 
@@ -449,40 +491,51 @@ grammar Perl6::Parser::Pure::Grammar
 #  }
   # }}}
 
-#    token statement_control:sym<import> {
-#        :my $*IN_DECL := 'import';
-#        <sym> <.ws>
-#        <module_name> [ <.spacey> <arglist> ]? <.ws>
-#        :my $*HAS_SELF := '';
+  # {{{ import (statement_control:sym<import>)
+#  token statement_control:sym<import>
+#    {
+#    :my $*IN_DECL := 'import';
+#    <sym> <.ws>
+#    <module_name> [ <.spacey> <arglist> ]? <.ws>
+#    :my $*HAS_SELF := '';
+#      {
+#      my $longname := $*W.dissect_longname($<module_name><longname>);
+#      my $module;
+#      my $found := 0;
+#      try
 #        {
-#            my $longname := $*W.dissect_longname($<module_name><longname>);
-#            my $module;
-#            my $found := 0;
-#            try {
-#                $module := $*W.find_symbol($longname.components());
-#                $found := 1;
-#            }
-#            if $found {
-#                # todo: fix arglist
-#                $*W.do_import($/, $*W.find_symbol(<CompUnit Handle>).from-unit($module.WHO), $longname.name, $*W.arglist($/));
-#            }
-#            else {
-#                $/.panic("Could not find module " ~ ~$<module_name> ~
-#                    " to import symbols from");
-#            }
+#        $module := $*W.find_symbol($longname.components());
+#        $found := 1;
 #        }
+#      if $found
+#        {
+#        # todo: fix arglist
+#        $*W.do_import($/, $*W.find_symbol(<CompUnit Handle>).from-unit($module.WHO), $longname.name, $*W.arglist($/));
+#        }
+#      else
+#        {
+#        $/.panic("Could not find module " ~ ~$<module_name> ~
+#            " to import symbols from");
+#        }
+#      }
 #    }
+  # }}}
 
-#    token statement_control:sym<no> {
-#        :my $*IN_DECL := 'no';
-#        :my $longname;
-#        <sym> <.ws>
-#        [
-#        | <module_name> [ <.spacey> <arglist> ]? <.explain_mystery> <.cry_sorrows>
-#            { $*W.do_pragma_or_load_module($/,0) }
-#        ]
-#        <.ws>
-#    }
+# XXX NIY?
+#
+# # {{{ no (statement_control:sym<no>)
+# token statement_control:sym<no>
+#   {
+# # :my $*IN_DECL := 'no';
+# # :my $longname;
+# # <sym> <.ws>
+# #   [
+# #   | <module_name> [ <.spacey> <arglist> ]? <.explain_mystery> <.cry_sorrows>
+# #     { $*W.do_pragma_or_load_module($/,0) }
+# #   ]
+# # <.ws>
+#   }
+# # }}}
 
 #    token statement_control:sym<use> {
 #        :my $longname;
@@ -532,15 +585,18 @@ grammar Perl6::Parser::Pure::Grammar
 #        <.ws>
 #    }
 
-#    rule statement_control:sym<require> {
-#        <sym>
-#        [
-#        | <module_name>
-#        | <file=.variable>
-#        | <!sigil> <file=.term>
-#        ]
-#        <EXPR>?
-#    }
+  # {{{ require (statement_control:sym<require>)
+  rule statement_control:sym<require>
+    {
+    <sym>
+      [
+      | <module_name>
+  #   | <file=.variable>
+  #   | <!sigil> <file=.term>
+      ]
+  # <EXPR>?
+    }
+  # }}}
 
 #    rule statement_control:sym<given> {
 #        <sym><.kok> <xblock($PBLOCK_REQUIRED_TOPIC)>
@@ -661,7 +717,7 @@ grammar Perl6::Parser::Pure::Grammar
     }
   # }}}
 
-  # {{{ comp_unit
+  # {{{ install_doc_phaser
   token install_doc_phaser
     {
     <?>
@@ -764,7 +820,8 @@ grammar Perl6::Parser::Pure::Grammar
     <.bom>?
     <lang-version>
     <.finishpad>
-    <statementlist> #=.FOREIGN_LANG($*MAIN, 'statementlist', 1)>
+    #<statementlist=.FOREIGN_LANG($*MAIN, 'statementlist', 1)>
+    <statementlist>
   
     <.install_doc_phaser>
   
@@ -793,17 +850,18 @@ grammar Perl6::Parser::Pure::Grammar
 #    token starter { $start }
 #    token stopper { $stop1 | $stop2 }
 #}
-#
+
 #role startstop[$start, $stop] {
 #    token starter { $start }
 #    token stopper { $stop }
 #}
-#
+
 #role stop[$stop] {
 #    token starter { <!> }
 #    token stopper { $stop }
 #}
-#
+
+# {{{ role STD
 ## This role captures things that STD factors out from any individual grammar,
 ## but that don't make sense to go in HLL::Grammar.
 #role STD {
@@ -1237,7 +1295,9 @@ grammar Perl6::Parser::Pure::Grammar
 #        <!>
 #    }
 #}
-#
+# }}}
+
+# {{{ grammar Perl6::Grammar
 #grammar Perl6::Grammar is HLL::Grammar does STD {
 #    #================================================================
 #    # AMBIENT AND POD-COMMON CODE HANDLERS
@@ -1328,13 +1388,6 @@ grammar Perl6::Parser::Pure::Grammar
 #        <[ ' \- ]>
 #    }
 #
-#    token name {
-#        [
-#        | <identifier> <morename>*
-#        | <morename>+
-#        ]
-#    }
-#
 #    token morename {
 #        :my $*QSIGIL := '';
 #        '::'
@@ -1347,10 +1400,6 @@ grammar Perl6::Parser::Pure::Grammar
 #        || <?before '::'> <.typed_panic: "X::Syntax::Name::Null">
 #        || $<bad>=[<.sigil><.identifier>] { my str $b := $<bad>; self.malformed("lookup of ::$b; please use ::('$b'), ::\{'$b'\}, or ::<$b>") }
 #        ]?
-#    }
-#
-#    token longname {
-#        <name> {} [ <?before ':' <.+alpha+[\< \[ \« ]>> <!RESTRICTED> <colonpair> ]*
 #    }
 #
 #    token deflongname {
@@ -1386,11 +1435,6 @@ grammar Perl6::Parser::Pure::Grammar
 #            }
 #        | <?>
 #        ]
-#    }
-#
-#    token module_name {
-#        <longname>
-#        [ <?[[]> :dba('generic role') '[' ~ ']' <arglist> ]?
 #    }
 #
 #    token end_keyword {
@@ -5386,10 +5430,10 @@ grammar Perl6::Parser::Pure::Grammar
 #        ]
 #        <![\w]>
 #    }
-#
-#
 #}
-#
+# }}}
+
+# {{{ grammar Perl6::QGrammar
 #grammar Perl6::QGrammar is HLL::Grammar does STD {
 #    proto token escape {*}
 #    proto token backslash {*}
@@ -5724,7 +5768,9 @@ grammar Perl6::Parser::Pure::Grammar
 #        return self.slang_grammar('Regex');
 #    }
 #}
-#
+# }}}
+
+# {{{ role MatchPackageNibbler
 #my role MatchPackageNibbler {
 #    method nibble-in-cursor($parent) {
 #        my $*LEAF := self;
@@ -5739,7 +5785,9 @@ grammar Perl6::Parser::Pure::Grammar
 #        $cur
 #    }
 #}
-#
+# }}}
+
+# {{{ grammar Perl6::RegexGrammar
 #grammar Perl6::RegexGrammar is QRegex::P6Regex::Grammar does STD does MatchPackageNibbler {
 #    method nibbler() {
 #        self.nibble-in-cursor(QRegex::P6Regex::Grammar)
@@ -5860,7 +5908,9 @@ grammar Perl6::Parser::Pure::Grammar
 #            ]?
 #    }
 #}
-#
+# }}}
+
+# {{{ grammar Perl6::P5RegexGrammar
 #grammar Perl6::P5RegexGrammar is QRegex::P5Regex::Grammar does STD does MatchPackageNibbler {
 #    method nibbler() {
 #        self.nibble-in-cursor(QRegex::P5Regex::Grammar)
@@ -5885,5 +5935,6 @@ grammar Perl6::Parser::Pure::Grammar
 #        <block=.LANG('MAIN','block')>
 #    }
 #}
+# }}}
 
 # vim: ft=perl6 et sw=4
