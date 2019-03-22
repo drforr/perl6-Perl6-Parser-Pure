@@ -291,18 +291,25 @@ grammar Perl6::Parser::Pure::Grammar
     <.finishpad>
   # :my $borg := $*BORG;
   # :my $has_mystery := $*MYSTERY ?? 1 !! 0;
-    { #`{ $*BORG := {} } }
+      {
+    # $*BORG := {}
+      }
       [
   #   | '{YOU_ARE_HERE}' <you_are_here>
     # | :dba('block')
         '{'
       # <!!{ $*VARIABLE := '' if $*VARIABLE; 1 }>
         <statementlist(1)>
-        [ <.cheat_heredoc> || '}']
+          [
+             <.cheat_heredoc>
+          || '}'
+          ]
         <?ENDSTMT>
       || <.missing_block( #`{ $borg, $has_mystery } )>
       ]
-    { #`{ $*CURPAD := $*W.pop_lexpad() } }
+      {
+    # $*CURPAD := $*W.pop_lexpad()
+      }
     }
   # }}}
 
@@ -315,8 +322,13 @@ grammar Perl6::Parser::Pure::Grammar
   # :my $borg := $*BORG;
   # :my $has_mystery := $*MYSTERY ?? 1 !! 0;
   # :my $*FATAL := self.pragma('fatal');  # can also be set inside statementlist
-    { #`{ $*BORG := {} } }
-    [ <?[{]> || <.missing_block( #`{ $borg, $has_mystery } )>]
+      {
+    # $*BORG := {}
+      }
+      [
+         <?[{]>
+      || <.missing_block( #`{ $borg, $has_mystery } )>
+      ]
     <.newpad>
     <blockoid>
     }
@@ -325,7 +337,8 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ longname
   token longname
     {
-    <name> {} [ <?before ':' <.+alpha+[\< \[ \« ]>> <!RESTRICTED> <colonpair> ]*
+    <name> {}
+      [ <?before ':' <.+alpha+[\< \[ \« ]>> <!RESTRICTED> <colonpair> ]*
     }
   # }}}
 
