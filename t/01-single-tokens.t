@@ -27,7 +27,14 @@ subtest 'version', {
   done-testing;
 };
 
-ok $ppp.to-tree( Q{loop {}} );
+subtest 'loop', {
+  ok $ppp.to-tree( Q{loop {}} );
+  ok $ppp.to-tree( Q{loop ( Þ ; Þ ; Þ ) {}} );
+
+  subtest 'failing', {
+    dies-ok { $ppp.to-tree( Q[for (] ) };
+  };
+};
 
 subtest 'no', {
   ok $ppp.to-tree( Q{no Module} );
@@ -44,10 +51,12 @@ subtest 'no', {
 subtest 'require', {
   ok $ppp.to-tree( Q{require Module} );
   ok $ppp.to-tree( Q{require My::Module} );
+  ok $ppp.to-tree( Q{require Þ} );
 
   subtest 'full statement', {
     ok $ppp.to-tree( Q{require Module;} );
     ok $ppp.to-tree( Q{require My::Module;} );
+    ok $ppp.to-tree( Q{require Þ;} );
   };
 
   done-testing;
@@ -67,13 +76,13 @@ subtest 'need', {
   };
   subtest 'version', {
     ok $ppp.to-tree( Q{need v} ); # This just means "Need module 'v'".
-    ok $ppp.to-tree( Q{need v6} );
-    ok $ppp.to-tree( Q{need v6.c} );
+    dies-ok { $ppp.to-tree( Q{need v6} ) };
+    dies-ok { $ppp.to-tree( Q{need v6.c} ) };
 
     subtest 'full statement', {
       ok $ppp.to-tree( Q{need v;} );
-      ok $ppp.to-tree( Q{need v6;} );
-      ok $ppp.to-tree( Q{need v6.c;} );
+      dies-ok { $ppp.to-tree( Q{need v6;} ) };
+      dies-ok { $ppp.to-tree( Q{need v6.c;} ) };
     };
 
     note "It might be useful to catch this for deprecation warnings.";

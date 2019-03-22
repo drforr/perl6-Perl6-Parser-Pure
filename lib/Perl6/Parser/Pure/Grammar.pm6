@@ -10,8 +10,21 @@ use Perl6::Parser::Pure::Classes;
 #{use Grammar::Debugger;
 grammar Perl6::Parser::Pure::Grammar
   {
+  # {{{ EXPR
+  token EXPR
+    {
+    'Þ'
+    }
+  # }}}
 
-  # {{{ panic
+  # {{{ sorry()
+  method sorry(*@args)
+    {
+  # self.typed_panic('X::Comp::AdHoc', payload => nqp::join('', @args))
+    }
+  # }}}
+
+  # {{{ panic()
   method panic(*@args)
     {
   # self.typed_panic('X::Comp::AdHoc', payload => nqp::join('', @args))
@@ -163,7 +176,6 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ lang-version
   rule lang-version
     {
-  # :my $comp := nqp::getcomp('perl6');
       [
       <.ws>? 'use' <version> {} # <-- update $/ so we can grab $<version>
       # we parse out the numeral, since we could have "6d"
@@ -216,23 +228,6 @@ grammar Perl6::Parser::Pure::Grammar
   token label
     {
     <identifier> ':' <?[\s]> <.ws>
-      {
-    # $*LABEL := ~$<identifier>;
-    # if $*W.already_declared('my', self.package, $*W.cur_lexpad(), [$*LABEL])
-    #   {
-    #   $*W.throw($/, ['X', 'Redeclaration'], symbol => $*LABEL);
-    #   }
-    # my str $orig      := self.orig();
-    # my int $total     := nqp::chars($orig);
-    # my int $from      := self.MATCH.from();
-    # my int $to        := self.MATCH.to() + nqp::chars($*LABEL);
-    # my int $line      := HLL::Compiler.lineof($orig, self.from(), :cache(1));
-    # my str $prematch  := nqp::substr($orig, $from > 20 ?? $from - 20 !! 0, $from > 20 ?? 20 !! $from);
-    # my str $postmatch := nqp::substr($orig, $to, 20);
-    # my $label     := $*W.find_symbol(['Label']).new( :name($*LABEL), :$line, :$prematch, :$postmatch );
-    # $*W.add_object_if_no_sc($label);
-    # $*W.install_lexical_symbol($*W.cur_lexpad(), $*LABEL, $label);
-      }
     }
   # }}}
 
@@ -286,8 +281,6 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ blockoid
   token blockoid
     {
-  # :my $*CURPAD;
-  # :my %*HANDLERS;
     <.finishpad>
   # :my $borg := $*BORG;
   # :my $has_mystery := $*MYSTERY ?? 1 !! 0;
@@ -316,12 +309,6 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ block
   token block($*IMPLICIT = 0)
     {
-  # :my $*DECLARAND := $*W.stub_code_object('Block');
-  # :my $*CODE_OBJECT := $*DECLARAND;
-  # :dba('scoped block')
-  # :my $borg := $*BORG;
-  # :my $has_mystery := $*MYSTERY ?? 1 !! 0;
-  # :my $*FATAL := self.pragma('fatal');  # can also be set inside statementlist
       {
     # $*BORG := {}
       }
@@ -345,7 +332,6 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ morename
   token morename
     {
-  # :my $*QSIGIL := '';
     '::'
       [
       || <?before '(' | <.alpha> >
@@ -513,10 +499,10 @@ grammar Perl6::Parser::Pure::Grammar
     :s''
       [
       '('
-  #     [
-  #        <e1=.EXPR>? ';' <e2=.EXPR>? ';' <e3=.EXPR>?
-  #     || <.malformed('loop spec')>
-  #     ]
+        [
+           <e1=.EXPR>? ';' <e2=.EXPR>? ';' <e3=.EXPR>?
+        || <.malformed('loop spec')>
+        ]
       ')'
       ]?
     <block>
@@ -530,18 +516,9 @@ grammar Perl6::Parser::Pure::Grammar
     {
     <sym>
       [
-      | <version> #`{ <.sorry('In case of using pragma, use "use" instead (e.g., "use v6;", "use v6.c;").')> }
+      | <version> <.sorry('In case of using pragma, use "use" instead (e.g., "use v6;", "use v6.c;").')>
       | <module_name>
       ]+ % ','
-      {
-    # for $<module_name>
-    #   {
-    #   my $lnd  := $*W.dissect_longname($_<longname>);
-    #   my $name := $lnd.name;
-    #   my %cp   := $lnd.colonpairs_hash('need');
-    #   $*W.load_module($/, $name, %cp, $*W.cur_lexpad);
-    #   }
-      }
    }
   # }}}
 
@@ -551,27 +528,6 @@ grammar Perl6::Parser::Pure::Grammar
   # :my $*IN_DECL := 'import';
     <sym> <.ws>
     <module_name> [ <.spacey> <arglist> ]? <.ws>
-  # :my $*HAS_SELF := '';
-      {
-    # my $longname := $*W.dissect_longname($<module_name><longname>);
-    # my $module;
-    # my $found := 0;
-    # try
-    #   {
-    #   $module := $*W.find_symbol($longname.components());
-    #   $found := 1;
-    #   }
-    # if $found
-    #   {
-    #   # todo: fix arglist
-    #   $*W.do_import($/, $*W.find_symbol(<CompUnit Handle>).from-unit($module.WHO), $longname.name, $*W.arglist($/));
-    #   }
-    # else
-    #   {
-    #   $/.panic("Could not find module " ~ ~$<module_name> ~
-    #       " to import symbols from");
-    #   }
-      }
     }
   # }}}
 
@@ -581,8 +537,6 @@ grammar Perl6::Parser::Pure::Grammar
   #
   token statement_control:sym<no>
     {
-  # :my $*IN_DECL := 'no';
-  # :my $longname;
     <sym> <.ws>
       [
       | <module_name> [ <.spacey> <arglist> ]? #`{ <.explain_mystery> <.cry_sorrows> }
@@ -597,12 +551,6 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ use (statement_control:sym<use>)
   token statement_control:sym<use>
     {
-  # :my $longname;
-  # :my $*IN_DECL := 'use';
-  # :my $*HAS_SELF := '';
-  # :my $*SCOPE   := 'use';
-  # :my $OLD_MAIN := ~$*MAIN;
-  # :my %*MYSTERY;
     $<doc>=[ 'DOC' \h+ ]**0..1
     <sym> <.ws>
       [
@@ -664,7 +612,7 @@ grammar Perl6::Parser::Pure::Grammar
   #   | <file=.variable>
   #   | <!sigil> <file=.term>
       ]
-  # <EXPR>?
+    <EXPR>?
     }
   # }}}
 
@@ -714,16 +662,6 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ statement
   token statement($*LABEL = '')
     {
-  # :my $*QSIGIL := '';
-  # :my $*SCOPE := '';
-
-  # # NOTE: annotations that use STATEMENT_ID often also need IN_STMT_MOD annotation, in order
-  # # to correctly migrate QAST::Blocks in constructs inside topics of statement modifiers
-  # :my $*STATEMENT_ID := $*NEXT_STATEMENT_ID++;
-  # :my $*IN_STMT_MOD := nqp::getlexdyn('$*IN_STMT_MOD');
-
-  # :my $*ESCAPEBLOCK := 0;
-  # :my $actions := self.slang_actions('MAIN');
   # <!!{ $/.set_actions($actions); 1 }>
     <!before <.[\])}]> | $ >
     <!stopper>
@@ -771,12 +709,6 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ statementlist
   rule statementlist($*statement_level = 0)
     {
-  # :my $*LANG;
-  # :my $*LEAF;
-  # :my %*LANG   := self.shallow_copy(self.slangs);   # XXX deprecated
-  # :my $*STRICT := nqp::getlexdyn('$*STRICT');
-
-  # :dba('statement list')
     <.ws>
   # # Define this scope to be a new language.
   # <!!{ $*LANG := $*LEAF := $/.clone_braid_from(self); 1 }>
@@ -800,91 +732,6 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ comp_unit
   token comp_unit
     {
-  # # From STD.pm.
-  # :my $*LEFTSIGIL;                           # sigil of LHS for item vs list assignment
-  # :my $*SCOPE := '';                         # which scope declarator we're under
-  # :my $*MULTINESS := '';                     # which multi declarator we're under
-  # :my $*QSIGIL := '';                        # sigil of current interpolation
-  # :my $*IN_META := '';                       # parsing a metaoperator like [..]
-  # :my $*IN_REDUCE := 0;                      # attempting to parse an [op] construct
-  # :my $*IN_DECL;                             # what declaration we're in
-  # :my $*IN_RETURN := 0;                      # are we in a return?
-  # :my $*HAS_SELF := '';                      # is 'self' available? (for $.foo style calls)
-  # :my $*begin_compunit := 1;                 # whether we're at start of a compilation unit
-  # :my $*DECLARAND;                           # the current thingy we're declaring, and subject of traits
-  # :my $*CODE_OBJECT;                         # the code object we're currently inside
-  # :my $*METHODTYPE;                          # the current type of method we're in, if any
-  # :my $*PKGDECL;                             # what type of package we're in, if any
-  # :my %*MYSTERY;                             # names we assume may be post-declared functions
-  # :my $*BORG := {};                          # who gets blamed for a missing block
-  # :my $*CCSTATE := '';
-  # :my $*STRICT;
-  # :my $*INVOCANT_OK := 0;
-  # :my $*INVOCANT;
-  # :my $*ARG_FLAT_OK := 0;
-  # :my $*WHENEVER_COUNT := -1;                # -1 indicates whenever not valid here
-  
-  # # Error related. There are three levels: worry (just a warning), sorry
-  # # (fatal but not immediately so) and panic (immediately deadly). There
-  # # is a limit on the number of sorrows also. Unlike STD, which emits the
-  # # textual messages as it goes, we keep track of the exception objects
-  # # and, if needed, make a composite exception group.
-  # :my @*WORRIES;                             # exception objects resulting from worry
-  # :my @*SORROWS;                             # exception objects resulting from sorry
-  # :my $*SORRY_LIMIT := 10;                   # when sorrow turns to panic
-  
-  # # Extras.
-  # :my @*NQP_VIOLATIONS;                      # nqp::ops per line number
-  # :my %*HANDLERS;                            # block exception handlers
-  # :my $*IMPLICIT;                            # whether we allow an implicit param
-  # :my $*HAS_YOU_ARE_HERE := 0;               # whether {YOU_ARE_HERE} has shown up
-  # :my $*OFTYPE;
-  # :my $*VMARGIN    := 0;                     # pod stuff
-  # :my $*ALLOW_INLINE_CODE := 0;              # pod stuff
-  # :my $*POD_IN_CODE_BLOCK := 0;              # pod stuff
-  # :my $*POD_IN_FORMATTINGCODE := 0;          # pod stuff
-  # :my $*POD_ALLOW_FCODES := 0b11111111111111111111111111; # allow which fcodes?
-  # :my $*POD_ANGLE_COUNT := 0;                # pod stuff
-  # :my $*IN_REGEX_ASSERTION := 0;
-  # :my $*IN_PROTO := 0;                       # are we inside a proto?
-  # :my $*NEXT_STATEMENT_ID := 1;              # to give each statement an ID
-  # :my $*IN_STMT_MOD := 0;                    # are we inside a statement modifier?
-  # :my $*COMPILING_CORE_SETTING := 0;         # are we compiling CORE.setting?
-  # # TODO XXX: see https://github.com/rakudo/rakudo/issues/2432
-  # :my $*SET_DEFAULT_LANG_VER := 1;
-  # :my %*SIG_INFO;                            # information about recent signature
-  # :my $*CAN_LOWER_TOPIC := 1;                # true if we optimize the $_ lexical away
-  
-  # # Various interesting scopes we'd like to keep to hand.
-  # :my $*GLOBALish;
-  # :my $*PACKAGE;
-  # :my $*UNIT;
-  # :my $*UNIT_OUTER;
-  # :my $*EXPORT;
-  # # stack of packages, which the 'is export' needs
-  # :my @*PACKAGES := [];
-  
-  # # A place for Pod
-  # :my $*POD_BLOCKS := [];
-  # :my $*POD_BLOCKS_SEEN := {};
-  # :my $*POD_PAST;
-  # :my $*DECLARATOR_DOCS;
-  # :my $*PRECEDING_DECL; # for #= comments
-  # :my $*PRECEDING_DECL_LINE := -1; # XXX update this when I see another comment like it?
-  # # TODO use these vars to implement S26 pod data block handling
-  # :my $*DATA-BLOCKS := [];
-  # :my %*DATA-BLOCKS := {};
-  
-  # # Quasis and unquotes
-  # :my $*IN_QUASI := 0;                       # whether we're currently in a quasi block
-  # :my $*MAIN := 'MAIN';
-  
-  # # performance improvement stuff
-  # :my $*FAKE_INFIX_FOUND := 0;
-  
-  # # for runaway detection
-  # :my $*LASTQUOTE := [0,0];
-  
       {
     # nqp::getcomp('perl6').reset_language_version();
     # $*W.loading_and_symbol_setup($/)
@@ -1195,9 +1042,6 @@ grammar Perl6::Parser::Pure::Grammar
 #                                                         :cache(1))));
 #    }
 #
-#    method sorry(*@args) {
-#        self.typed_sorry('X::Comp::AdHoc', payload => nqp::join('', @args))
-#    }
 #    method worry(*@args) {
 #        self.typed_worry('X::Comp::AdHoc', payload => nqp::join('', @args))
 #    }
