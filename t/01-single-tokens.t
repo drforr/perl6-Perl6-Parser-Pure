@@ -28,17 +28,32 @@ subtest 'version', {
 };
 
 subtest 'loop', {
-  ok $ppp.to-tree( Q{loop {}} );
-  ok $ppp.to-tree( Q{loop ( Þ ; Þ ; Þ ) {}} );
 
   subtest 'failing', {
     dies-ok { $ppp.to-tree( Q[for (] ) };
+    dies-ok { $ppp.to-tree( Q{loop ( ) {}} ) };
+    dies-ok { $ppp.to-tree( Q{loop ( ; ) {}} ) };
   };
+
+  ok $ppp.to-tree( Q{loop {}} );
+
+  # Just for the hell of it, run through the permutations.
+  #
+  ok $ppp.to-tree( Q{loop ( ; ; ) {}} ); # 000
+  ok $ppp.to-tree( Q{loop ( Þ ; ; ) {}} ); # 100
+  ok $ppp.to-tree( Q{loop ( ; Þ ; ) {}} ); # 010
+  ok $ppp.to-tree( Q{loop ( Þ ; Þ ; ) {}} ); # 110
+  ok $ppp.to-tree( Q{loop ( ; ; Þ ) {}} ); # 001
+  ok $ppp.to-tree( Q{loop ( Þ ; ; Þ ) {}} ); # 101
+  ok $ppp.to-tree( Q{loop ( ; Þ ; Þ ) {}} ); # 011
+  ok $ppp.to-tree( Q{loop ( Þ ; Þ ; Þ ) {}} ); # 111
 };
 
 subtest 'no', {
   ok $ppp.to-tree( Q{no Module} );
   ok $ppp.to-tree( Q{no My::Module} );
+  ok $ppp.to-tree( Q{no My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
+  #ok $ppp.to-tree( Q{no My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
 
   subtest 'full statement', {
     ok $ppp.to-tree( Q{no Module;} );
@@ -51,6 +66,8 @@ subtest 'no', {
 subtest 'require', {
   ok $ppp.to-tree( Q{require Module} );
   ok $ppp.to-tree( Q{require My::Module} );
+  ok $ppp.to-tree( Q{require My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
+  #ok $ppp.to-tree( Q{require My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
   ok $ppp.to-tree( Q{require Þ} );
 
   subtest 'full statement', {
@@ -66,6 +83,9 @@ subtest 'need', {
   subtest 'Module', {
     ok $ppp.to-tree( Q{need Module} );
     ok $ppp.to-tree( Q{need My::Module} );
+    ok $ppp.to-tree( Q{need My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
+    #ok $ppp.to-tree( Q{need My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
+    ok $ppp.to-tree( Q{need Module, Other::Module} );
 
     subtest 'full statement', {
       ok $ppp.to-tree( Q{need Module;} );
@@ -75,9 +95,13 @@ subtest 'need', {
     done-testing;
   };
   subtest 'version', {
+
+    subtest 'failing', {
+      dies-ok { $ppp.to-tree( Q{need v6} ) };
+      dies-ok { $ppp.to-tree( Q{need v6.c} ) };
+    };
+
     ok $ppp.to-tree( Q{need v} ); # This just means "Need module 'v'".
-    dies-ok { $ppp.to-tree( Q{need v6} ) };
-    dies-ok { $ppp.to-tree( Q{need v6.c} ) };
 
     subtest 'full statement', {
       ok $ppp.to-tree( Q{need v;} );
@@ -94,6 +118,8 @@ subtest 'need', {
 subtest 'import', {
   ok $ppp.to-tree( Q{import Module} );
   ok $ppp.to-tree( Q{import My::Module} );
+  ok $ppp.to-tree( Q{import My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
+  #ok $ppp.to-tree( Q{import My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
 
   subtest 'full statement', {
     ok $ppp.to-tree( Q{import Module;} );
@@ -106,6 +132,8 @@ subtest 'import', {
 subtest 'use Module', {
   ok $ppp.to-tree( Q{use Module} );
   ok $ppp.to-tree( Q{use My::Module} );
+  ok $ppp.to-tree( Q{use My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
+  #ok $ppp.to-tree( Q{use My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
 
   subtest 'full statement', {
     ok $ppp.to-tree( Q{use Module;} );

@@ -24,6 +24,12 @@ grammar Perl6::Parser::Pure::Grammar
     }
   # }}}
 
+  # {{{ typed_panic()
+  method typed_panic(*@args)
+    {
+    }
+  # }}}
+
   # {{{ panic()
   method panic(*@args)
     {
@@ -178,8 +184,6 @@ grammar Perl6::Parser::Pure::Grammar
     {
       [
       <.ws>? 'use' <version> {} # <-- update $/ so we can grab $<version>
-      # we parse out the numeral, since we could have "6d"
-    # :my $version := nqp::radix(10,$<version><vnum>[0],0,0)[0];
         [
       # || <?{ $version == 6 }> { $*W.load-lang-ver: $<version>, $comp }
         || {
@@ -245,7 +249,6 @@ grammar Perl6::Parser::Pure::Grammar
       [
       || <?before <.[ \s \# ]> > <.ws>
       || <?{
-         # my $n := nqp::substr(self.orig, self.from, self.pos - self.from);
          # $*W.is_name([$n]) || $*W.is_name(['&' ~ $n])
          #     ?? False
          #     !! self.panic("Whitespace required after keyword '$n'")
@@ -282,14 +285,11 @@ grammar Perl6::Parser::Pure::Grammar
   token blockoid
     {
     <.finishpad>
-  # :my $borg := $*BORG;
-  # :my $has_mystery := $*MYSTERY ?? 1 !! 0;
       {
     # $*BORG := {}
       }
       [
   #   | '{YOU_ARE_HERE}' <you_are_here>
-    # | :dba('block')
         '{'
       # <!!{ $*VARIABLE := '' if $*VARIABLE; 1 }>
         <statementlist(1)>
@@ -321,14 +321,6 @@ grammar Perl6::Parser::Pure::Grammar
     }
   # }}}
 
-  # {{{ longname
-  token longname
-    {
-    <name> {}
-      [ <?before ':' <.+alpha+[\< \[ \« ]>> <!RESTRICTED> <colonpair> ]*
-    }
-  # }}}
-
   # {{{ morename
   token morename
     {
@@ -337,9 +329,9 @@ grammar Perl6::Parser::Pure::Grammar
       || <?before '(' | <.alpha> >
            [
            | <identifier>
-         # | #`{ :dba('indirect name') } '(' ~ ')' [ <.ws> <EXPR> ]
+           | '(' ~ ')' [ <.ws> <EXPR> ] # "Indirect name"
            ]
-      || <?before '::'> { die "Null name" } #`{ <.typed_panic: "X::Syntax::Name::Null"> }
+      || <?before '::'> <.typed_panic: "X::Syntax::Name::Null">
    #  || $<bad>=[<.sigil><.identifier>] { my str $b := $<bad>; self.malformed("lookup of ::$b; please use ::('$b'), ::\{'$b'\}, or ::<$b>") }
       ]?
   }
@@ -355,11 +347,19 @@ grammar Perl6::Parser::Pure::Grammar
     }
   # }}}
 
+  # {{{ longname
+  token longname
+    {
+    <name> {}
+      [ <?before ':' <.+alpha+[\< \[ \« ]>> <!RESTRICTED> <colonpair> ]*
+    }
+  # }}}
+
   # {{{ module_name
   token module_name
     {
     <longname>
-    [ <?[[]> #`{ :dba('generic role') } '[' ~ ']' <arglist> ]?
+      [ <?[[]> '[' ~ ']' <arglist> ]? # "Generic role"
     }
   # }}}
 
@@ -519,6 +519,8 @@ grammar Perl6::Parser::Pure::Grammar
       | <version> <.sorry('In case of using pragma, use "use" instead (e.g., "use v6;", "use v6.c;").')>
       | <module_name>
       ]+ % ','
+      {
+      }
    }
   # }}}
 
@@ -669,11 +671,11 @@ grammar Perl6::Parser::Pure::Grammar
       [
       | <label> <statement($*LABEL)> { #`{ $*LABEL := '' if $*LABEL } }
       | <statement_control>
-  #   | <EXPR> #`{ :dba('statement end') } { #`{ $*IN_STMT_MOD := 1 } }
+  #   | <EXPR> { #`{ $*IN_STMT_MOD := 1 } } "Statement end"
   #       [
   #       || <?MARKED('endstmt')>
-  #       || #`{ :dba('statement modifier') } <.ws> <statement_mod_cond> <statement_mod_loop>?
-  #       || #`{ :dba('statement modifier loop') } <.ws> <statement_mod_loop>
+  #       || <.ws> <statement_mod_cond> <statement_mod_loop>? # "Statement modifier"
+  #       || <.ws> <statement_mod_loop> # "Statement modifier loop"
   #            {
   #          # my $sp := $<EXPR><statement_prefix>;
   #          # if $sp && $sp<sym> eq 'do'
@@ -1305,22 +1307,8 @@ grammar Perl6::Parser::Pure::Grammar
 #        <[ ' \- ]>
 #    }
 #
-#    token morename {
-#        :my $*QSIGIL := '';
-#        '::'
-#        [
-#        ||  <?before '(' | <.alpha> >
-#            [
-#            | <identifier>
-#            | :dba('indirect name') '(' ~ ')' [ <.ws> <EXPR> ]
-#            ]
-#        || <?before '::'> <.typed_panic: "X::Syntax::Name::Null">
-#        || $<bad>=[<.sigil><.identifier>] { my str $b := $<bad>; self.malformed("lookup of ::$b; please use ::('$b'), ::\{'$b'\}, or ::<$b>") }
-#        ]?
-#    }
-#
 #    token deflongname {
-#        :dba('new name to be defined')
+#        # "new name to be defined"
 #        <name> <colonpair>*
 #    }
 #
@@ -1335,7 +1323,7 @@ grammar Perl6::Parser::Pure::Grammar
 #    token deftermnow { <defterm> }
 #
 #    token defterm {     # XXX this is probably too general
-#        :dba('new term to be defined')
+#        # "new term to be defined"
 #        <identifier>
 #        [
 #        | <colonpair>+
@@ -1383,9 +1371,9 @@ grammar Perl6::Parser::Pure::Grammar
 #        self.MARKED('ws') ?? self !! self._ws()
 #    }
 #
-#    token _ws {
+#    token _ws { # "whitespace"
 #        :my $old_highexpect := self.'!fresh_highexpect'();
-#        :dba('whitespace')
+#        # "whitespace"
 #        <!ww>
 #        [
 #        | [\r\n || \v] <.heredoc>
@@ -1396,9 +1384,9 @@ grammar Perl6::Parser::Pure::Grammar
 #        :my $stub := self.'!fresh_highexpect'();
 #    }
 #
-#    token unsp {
+#    token unsp { # "unspace"
 #        \\ <?before \s | '#'>
-#        :dba('unspace')
+#        # "unspace"
 #        [
 #        | <.vws>
 #        | <.unv>
@@ -1406,8 +1394,7 @@ grammar Perl6::Parser::Pure::Grammar
 #        ]*
 #    }
 #
-#    token vws {
-#        :dba('vertical whitespace')
+#    token vws { # "vertical whitespace"
 #        [
 #            [
 #            | \v
@@ -1417,8 +1404,7 @@ grammar Perl6::Parser::Pure::Grammar
 #        ]+
 #    }
 #
-#    token unv {
-#        :dba('horizontal whitespace')
+#    token unv { # "horizontal whitespace"
 #        [
 #        | \h+
 #        | \h* <.comment>
@@ -1437,26 +1423,6 @@ grammar Perl6::Parser::Pure::Grammar
 #        $new;
 #    }
 #
-#    rule statementlist($*statement_level = 0) {
-#        :my $*LANG;
-#        :my $*LEAF;
-#        :my %*LANG   := self.shallow_copy(self.slangs);   # XXX deprecated
-#        :my $*STRICT := nqp::getlexdyn('$*STRICT');
-#
-#        :dba('statement list')
-##        <.check_LANG_oopsies('statementlist')>
-#        <.ws>
-#        # Define this scope to be a new language.
-#        <!!{ $*LANG := $*LEAF := $/.clone_braid_from(self); 1 }>
-#        [
-#        | $
-#        | <?before <.[\)\]\}]>>
-#        | [ <statement> <.eat_terminator> ]*
-#        ]
-#        <.set_braid_from(self)>   # any language tweaks must not escape
-#        <!!{ nqp::rebless($/, self.WHAT); 1 }>
-#    }
-#
 #    method shallow_copy(%hash) {
 #        my %result;
 #        for %hash {
@@ -1465,8 +1431,7 @@ grammar Perl6::Parser::Pure::Grammar
 #        %result
 #    }
 #
-#    rule semilist {
-#        :dba('list composer')
+#    rule semilist { # "List composer"
 #        ''
 #        [
 #        | <?before <.[)\]}]> >
@@ -1474,8 +1439,7 @@ grammar Perl6::Parser::Pure::Grammar
 #        ]
 #    }
 #
-#    rule sequence {
-#        :dba('sequence of statements')
+#    rule sequence { # "Sequence of statements"
 #        ''
 #        [
 #        | <?before <.[)\]}]> >
@@ -1511,8 +1475,7 @@ grammar Perl6::Parser::Pure::Grammar
 #                $*PRECEDING_DECL := $*DECLARAND;
 #            }
 #        }
-#        <.attach_leading_docs>
-#        :dba('block or pointy block')
+#        <.attach_leading_docs> # "Block or pointy block"
 #        :my $borg := $*BORG;
 #        :my $has_mystery := $*MYSTERY ?? 1 !! 0;
 #        { $*BORG := {} }
@@ -1535,19 +1498,6 @@ grammar Perl6::Parser::Pure::Grammar
 #    }
 #
 #    token lambda { '->' | '<->' }
-#
-#    token block($*IMPLICIT = 0) {
-#        :my $*DECLARAND := $*W.stub_code_object('Block');
-#        :my $*CODE_OBJECT := $*DECLARAND;
-#        :dba('scoped block')
-#        :my $borg := $*BORG;
-#        :my $has_mystery := $*MYSTERY ?? 1 !! 0;
-#        :my $*FATAL := self.pragma('fatal');  # can also be set inside statementlist
-#        { $*BORG := {} }
-#        [ <?[{]> || <.missing_block($borg, $has_mystery)>]
-#        <.newpad>
-#        <blockoid>
-#    }
 #
 #    token unitstart { <?> }
 #    token you_are_here {
@@ -1832,7 +1782,6 @@ grammar Perl6::Parser::Pure::Grammar
 #        :my $*value;
 #
 #        ':'
-#        :dba('colon pair')
 #        [
 #        | '!' [ <identifier> || <.panic: "Malformed False pair; expected identifier"> ]
 #            [ <[ \[ \( \< \{ ]> {
@@ -1860,10 +1809,10 @@ grammar Perl6::Parser::Pure::Grammar
 #        | <identifier>
 #            { $*key := $<identifier>.Str; }
 #            [
-#            || <.unsp>? :dba('pair value') <coloncircumfix($*key)> { $*value := $<coloncircumfix>; }
+#            || <.unsp>? <coloncircumfix($*key)> { $*value := $<coloncircumfix>; } # "Pair value"
 #            || { $*value := 1; }
 #            ]
-#        | :dba('signature') '(' ~ ')' <fakesignature>
+#        | '(' ~ ')' <fakesignature> # "Signature"
 #        | <coloncircumfix('')>
 #            { $*key := ""; $*value := $<coloncircumfix>; }
 #        | <var=.colonpair_variable>
@@ -2059,7 +2008,7 @@ grammar Perl6::Parser::Pure::Grammar
 #    token variable {
 #        :my $*IN_META := '';
 #        [
-#        | :dba('infix noun') '&[' ~ ']' <infixish('[]')>
+#        | '&[' ~ ']' <infixish('[]')> # "infix noun"
 #        | <sigil> [ $<twigil>=['.^'] <desigilname=desigilmetaname> | <twigil>? <desigilname> ]
 #          [ <?{ !$*IN_DECL && $*VARIABLE && $*VARIABLE eq $<sigil> ~ $<twigil> ~ $<desigilname> }>
 #            { self.typed_panic: 'X::Syntax::Variable::Initializer', name => $*VARIABLE } ]?
@@ -2077,7 +2026,6 @@ grammar Perl6::Parser::Pure::Grammar
 #    }
 #
 #    token contextualizer {
-#        :dba('contextualizer')
 #        [ <?{ $*IN_DECL }> <.panic: "Cannot declare a contextualizer"> ]?
 #        [
 #        | <sigil> '(' ~ ')'    <coercee=sequence>
@@ -2195,8 +2143,7 @@ grammar Perl6::Parser::Pure::Grammar
 #            [ <longname> { $longname := $*W.dissect_longname($<longname>); } ]?
 #            <.newpad>
 #
-#            [ :dba('generic role')
-#                <?{ ($*PKGDECL//'') eq 'role' }>
+#            [   <?{ ($*PKGDECL//'') eq 'role' }> # "generic role"
 #                '[' ~ ']' <signature>
 #                { $*IN_DECL := ''; }
 #            ]?
@@ -2495,9 +2442,8 @@ grammar Perl6::Parser::Pure::Grammar
 #    }
 #    token scope_declarator:sym<unit>      { <sym> <scoped('unit')> }
 #
-#    token scoped($*SCOPE) {
+#    token scoped($*SCOPE) { # "scoped declarator"
 #        <.end_keyword>
-#        :dba('scoped declarator')
 #        [
 #        :my $*DOC := $*DECLARATOR_DOCS;
 #        :my $*POD_BLOCK;
@@ -2581,10 +2527,10 @@ grammar Perl6::Parser::Pure::Grammar
 #                            reserved => '() shape syntax in variable declarations');
 #                    }
 #                }
-#            | :dba('shape definition') '[' ~ ']' <semilist>
+#            | '[' ~ ']' <semilist> # "Shape definition"
 #                { $sigil ne '@' && self.typed_sorry('X::Syntax::Reserved',
 #                    reserved => '[] shape syntax with the ' ~ $sigil ~ ' sigil') }
-#            | :dba('shape definition') '{' ~ '}' <semilist>
+#            | '{' ~ '}' <semilist> # "Shape definition"
 #                { $sigil ne '%' && self.typed_sorry('X::Syntax::Reserved',
 #                    reserved => '{} shape syntax with the ' ~ $sigil ~ ' sigil') }
 #            | <?[<]> <postcircumfix> <.NYI: "Shaped variable declarations">
@@ -2714,8 +2660,7 @@ grammar Perl6::Parser::Pure::Grammar
 #            [
 #            | $<specials>=[<[ ! ^ ]>?]<longname> [ '(' <multisig(1)> ')' ]? <trait>*
 #            | '(' <multisig(1)> ')' <trait>*
-#            | <sigil>'.':!s
-#                :dba('subscript signature')
+#            | <sigil>'.':!s # "Subscript signature"
 #                [
 #                | '(' ~ ')' <multisig(1)>
 #                | '[' ~ ']' <multisig(1)>
@@ -2834,8 +2779,7 @@ grammar Perl6::Parser::Pure::Grammar
 #        <signature('sig', $allow_invocant)>
 #    }
 #
-#    token sigterm {
-#        :dba('signature')
+#    token sigterm { # "signature"
 #        ':(' ~ ')' <fakesignature>
 #    }
 #
@@ -2945,8 +2889,7 @@ grammar Perl6::Parser::Pure::Grammar
 #        }
 #    }
 #
-#    token param_var {
-#        :dba('formal parameter')
+#    token param_var { # "Formal parameter"
 #        :my $*DOC := $*DECLARATOR_DOCS; # these get cleared later
 #        :my $*POD_BLOCK;
 #        :my $*SURROUNDING_DECL := nqp::getlexdyn('$*IN_DECL');
@@ -2971,9 +2914,8 @@ grammar Perl6::Parser::Pure::Grammar
 #          || $<name>=[<[/!]>]
 #          ]?
 #
-#          :dba('shape declaration')
 #          :my $*IN_DECL := '';
-#          [
+#          [ # "Shape declaration"
 #          | <?before ':('>  ':'  # XXX allow fakesig parsed as subsig for the moment
 #          | <?before '('>         <.sorry: "Shape declaration with () is reserved;\n  please use whitespace if you meant a subsignature for unpacking,\n  or use the :() form if you meant to add signature info to the function's type">
 #          | <?before '['> <arrayshape=.postcircumfix>
@@ -2989,7 +2931,6 @@ grammar Perl6::Parser::Pure::Grammar
 #
 #    token named_param {
 #        :my $*GOAL := ')';
-#        :dba('named parameter')
 #        ':'
 #        [
 #        | <name=.identifier> '('
@@ -3019,7 +2960,6 @@ grammar Perl6::Parser::Pure::Grammar
 #        :my $*IN_DECL := '';
 #        :my $*HAS_SELF := $*CONSTRAINT_USAGE eq 'var' && $*SCOPE eq 'has'
 #            ?? nqp::null !! nqp::getlexdyn('$*HAS_SELF');
-#        :dba('constraint')
 #        [
 #        | '[' ~ ']' <signature>
 #        | '(' ~ ')' <signature>
@@ -3335,7 +3275,7 @@ grammar Perl6::Parser::Pure::Grammar
 #            <.unsp>?
 #            [
 #                <?[[]> <?{ $is_type }>
-#                :dba('type parameter') '[' ~ ']' <arglist>
+#                '[' ~ ']' <arglist> # "type parameter"
 #            ]?
 #            <.unsp>?
 #            [
@@ -3409,11 +3349,10 @@ grammar Perl6::Parser::Pure::Grammar
 #        [ <?{ $*IN_PROTO }> || <.panic: '{*} may only appear in proto'> ]
 #    }
 #
-#    token args($*INVOCANT_OK = 0) {
+#    token args($*INVOCANT_OK = 0) { # "argument list"
 #        :my $*INVOCANT;
 #        :my $*GOAL := '';
 #        :my $*FAKE_INFIX_FOUND := 0;
-#        :dba('argument list')
 #        [
 #        | '(' ~ ')' <semiarglist>
 #        | <.unsp> '(' ~ ')' <semiarglist>
@@ -3432,7 +3371,6 @@ grammar Perl6::Parser::Pure::Grammar
 #        :my $*QSIGIL := '';
 #        :my $*ARG_FLAT_OK := 1;
 #        <.ws>
-#        :dba('argument list')
 #        [
 #        | <?stdstopper>
 #        | <EXPR('e=')>
