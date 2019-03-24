@@ -31,6 +31,8 @@ subtest 'loop', {
 
   subtest 'failing', {
     dies-ok { $ppp.to-tree( Q[for (] ) };
+    dies-ok { $ppp.to-tree( Q[for ( ; ; )] ) };
+    dies-ok { $ppp.to-tree( Q[for my] ) };
     dies-ok { $ppp.to-tree( Q{loop ( ) {}} ) };
     dies-ok { $ppp.to-tree( Q{loop ( ; ) {}} ) };
   };
@@ -120,6 +122,7 @@ subtest 'import', {
   ok $ppp.to-tree( Q{import My::Module} );
   ok $ppp.to-tree( Q{import My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
   #ok $ppp.to-tree( Q{import My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
+  ok $ppp.to-tree( Q{import Module Þ} );
 
   subtest 'full statement', {
     ok $ppp.to-tree( Q{import Module;} );

@@ -187,8 +187,8 @@ grammar Perl6::Parser::Pure::Grammar
         [
       # || <?{ $version == 6 }> { $*W.load-lang-ver: $<version>, $comp }
         || {
-         # $/.typed_panic: 'X::Language::Unsupported',
-         # version => ~$<version>
+           $/.typed_panic: 'X::Language::Unsupported',
+                           version => ~$<version>
            }
         ]
       || {
@@ -285,9 +285,7 @@ grammar Perl6::Parser::Pure::Grammar
   token blockoid
     {
     <.finishpad>
-      {
-    # $*BORG := {}
-      }
+      { }
       [
   #   | '{YOU_ARE_HERE}' <you_are_here>
         '{'
@@ -300,18 +298,14 @@ grammar Perl6::Parser::Pure::Grammar
         <?ENDSTMT>
       || <.missing_block( #`{ $borg, $has_mystery } )>
       ]
-      {
-    # $*CURPAD := $*W.pop_lexpad()
-      }
+      { }
     }
   # }}}
 
   # {{{ block
   token block($*IMPLICIT = 0)
     {
-      {
-    # $*BORG := {}
-      }
+      { }
       [
          <?[{]>
       || <.missing_block( #`{ $borg, $has_mystery } )>
@@ -350,8 +344,20 @@ grammar Perl6::Parser::Pure::Grammar
   # {{{ longname
   token longname
     {
-    <name> {}
+    <name> { }
       [ <?before ':' <.+alpha+[\< \[ \« ]>> <!RESTRICTED> <colonpair> ]*
+    }
+  # }}}
+
+  # {{{ arglist
+  token arglist
+    {
+    <.ws>
+      [
+  #   | <?stdstopper>
+      | <EXPR> #('e=')>
+      | <?>
+      ]
     }
   # }}}
 
@@ -404,14 +410,14 @@ grammar Perl6::Parser::Pure::Grammar
   rule statement_control:sym<unless>
     {
     $<sym>='unless'<.kok>
-#   <xblock($PBLOCK_NO_TOPIC)> # 0 means we're not parsing `without`
-#     [
-#        <!before [els[e|if]|orwith]» >
-#     || $<wrong-keyword>=[els[e|if]|orwith]» {}
-#        <.typed_panic:
-#          'X::Syntax::UnlessElse', keyword => ~$<wrong-keyword>,
-#        >
-#     ]
+  # <xblock($PBLOCK_NO_TOPIC)> # 0 means we're not parsing `without`
+  #   [
+  #      <!before [els[e|if]|orwith]» >
+  #   || $<wrong-keyword>=[els[e|if]|orwith]» {}
+  #      <.typed_panic:
+  #        'X::Syntax::UnlessElse', keyword => ~$<wrong-keyword>,
+  #      >
+  #   ]
      }
   # }}}
 
@@ -419,14 +425,14 @@ grammar Perl6::Parser::Pure::Grammar
   rule statement_control:sym<without>
     {
     $<sym>='without'<.kok>
-#   <xblock($PBLOCK_REQUIRED_TOPIC)> # 1 means we're not parsing `unless`
-#     [
-#       <!before [els[e|if]|orwith]» >
-#     || $<wrong-keyword>=[els[e|if]|orwith]» {}
-#        <.typed_panic:
-#          'X::Syntax::WithoutElse', keyword => ~$<wrong-keyword>,
-#        >
-#     ]
+  # <xblock($PBLOCK_REQUIRED_TOPIC)> # 1 means we're not parsing `unless`
+  #   [
+  #     <!before [els[e|if]|orwith]» >
+  #   || $<wrong-keyword>=[els[e|if]|orwith]» {}
+  #      <.typed_panic:
+  #        'X::Syntax::WithoutElse', keyword => ~$<wrong-keyword>,
+  #      >
+  #   ]
     }
   # }}}
 
@@ -434,7 +440,7 @@ grammar Perl6::Parser::Pure::Grammar
   rule statement_control:sym<while>
     {
     $<sym>=[while|until]<.kok> {}
-#   <xblock>
+  # <xblock>
     }
   # }}}
 
@@ -455,15 +461,15 @@ grammar Perl6::Parser::Pure::Grammar
   rule statement_control:sym<for>
     {
     <sym><.kok> {}
-#     [
-#       <?before 'my'? '$'\w+\s+'(' >
-#       <.typed_panic: 'X::Syntax::P5'>
-#     ]?
-#     [
-#       <?before '(' <.EXPR>? ';' <.EXPR>? ';' <.EXPR>? ')' >
-#       <.obs('C-style "for (;;)" loop', '"loop (;;)"')>
-#     ]?
-#     <xblock($PBLOCK_REQUIRED_TOPIC)>
+      [
+        <?before 'my'? '$'\w+\s+'(' >
+        <.typed_panic: 'X::Syntax::P5'>
+      ]?
+      [
+        <?before '(' <.EXPR>? ';' <.EXPR>? ';' <.EXPR>? ')' >
+        <.obs('C-style "for (;;)" loop', '"loop (;;)"')>
+      ]?
+  #   <xblock($PBLOCK_REQUIRED_TOPIC)>
      }
   # }}}
 
@@ -471,17 +477,15 @@ grammar Perl6::Parser::Pure::Grammar
   rule statement_control:sym<whenever>
     {
     <sym><.kok>
-#     [
-#     || <?{
-#             nqp::getcomp('perl6').language_version eq '6.c'
-#          || $*WHENEVER_COUNT >= 0
-#        }>
-#     || <.typed_panic('X::Comp::WheneverOutOfScope')>
-#     ]
-#     {
-#   # $*WHENEVER_COUNT++
-#     }
-#   <xblock($PBLOCK_REQUIRED_TOPIC)>
+  #   [
+  #   || <?{
+  #    #      nqp::getcomp('perl6').language_version eq '6.c'
+  #    #   || $*WHENEVER_COUNT >= 0
+  #      }>
+  #   || <.typed_panic('X::Comp::WheneverOutOfScope')>
+  #   ]
+  #   { }
+  # <xblock($PBLOCK_REQUIRED_TOPIC)>
     }
   # }}}
 
@@ -519,17 +523,19 @@ grammar Perl6::Parser::Pure::Grammar
       | <version> <.sorry('In case of using pragma, use "use" instead (e.g., "use v6;", "use v6.c;").')>
       | <module_name>
       ]+ % ','
-      {
-      }
+      { }
    }
   # }}}
 
   # {{{ import (statement_control:sym<import>)
   token statement_control:sym<import>
     {
-  # :my $*IN_DECL := 'import';
     <sym> <.ws>
-    <module_name> [ <.spacey> <arglist> ]? <.ws>
+    <module_name>
+      [
+      <.spacey> <arglist>
+      ]?
+     <.ws>
     }
   # }}}
 
@@ -541,10 +547,9 @@ grammar Perl6::Parser::Pure::Grammar
     {
     <sym> <.ws>
       [
-      | <module_name> [ <.spacey> <arglist> ]? #`{ <.explain_mystery> <.cry_sorrows> }
-        {
-      # $*W.do_pragma_or_load_module($/,0)
-        }
+      | <module_name>
+          [ <.spacey> <arglist> ]? #`{ <.explain_mystery> <.cry_sorrows> }
+        { }
       ]
     <.ws>
     }
@@ -557,43 +562,13 @@ grammar Perl6::Parser::Pure::Grammar
     <sym> <.ws>
       [
       | <version>
-          {
-          die "Too late for version"
-        # $/.typed_panic: 'X::Language::TooLate', version => ~$<version>
-          }
+          { $/.typed_panic: 'X::Language::TooLate', version => ~$<version> }
       | <module_name>
           [
           || <.spacey> <arglist> <.cheat_heredoc>? <?{ $<arglist><EXPR> }> <.explain_mystery> <.cry_sorrows>
-               {
-             # my $oldmain := %*LANG<MAIN>;
-             # $*W.do_pragma_or_load_module($/,1);
-             # $¢ := $*LANG;
-             # if nqp::istype($oldmain, %*LANG<MAIN>.WHAT)
-             #   {
-             #   %*LANG := self.shallow_copy($*LANG.slangs);
-             #   }
-             # else
-             #   {
-             #   $/.check_LANG_oopsies('use');
-             #   }
-               }
-        || {
-         # unless ~$<doc> && !%*COMPILING<%?OPTIONS><doc>
-         #   {
-         #   my $oldmain := %*LANG<MAIN>;
-         #   $*W.do_pragma_or_load_module($/,1);
-         #   $¢ := $*LANG;
-         #   if nqp::istype($oldmain, %*LANG<MAIN>.WHAT)
-         #     {
-         #     %*LANG := self.shallow_copy($*LANG.slangs);
-         #     }
-         #   else
-         #     {
-         #     $/.check_LANG_oopsies('use');
-         #     }
-         #   }
-           }
-        ]
+               { }
+          || { }
+          ]
       ]
       [
     #    <?{ $*MAIN ne $OLD_MAIN }>
@@ -659,6 +634,7 @@ grammar Perl6::Parser::Pure::Grammar
     <sym> <block(1)>
     }
   # }}}
+
   # }}}
 
   # {{{ statement
@@ -703,8 +679,7 @@ grammar Perl6::Parser::Pure::Grammar
     || $
     || <?stopper>
     || <?before [if|while|for|loop|repeat|given|when] » > #`{ $/.'!clear_highwater'(); self.typed_panic( 'X::Syntax::Confused', reason => "Missing semicolon" ) }
-    || # { $/.typed_panic( 'X::Syntax::Confused', reason => "Confused" ) }
-       { die "Confused" }
+    || { $/.typed_panic( 'X::Syntax::Confused', reason => "Confused" ) }
     }
   # }}}
 
@@ -765,8 +740,6 @@ grammar Perl6::Parser::Pure::Grammar
     }
   # }}}
   }
-
-
 
 #role startstops[$start, $stop1, $stop2] {
 #    token starter { $start }
@@ -3364,18 +3337,6 @@ grammar Perl6::Parser::Pure::Grammar
 #    token semiarglist {
 #        <arglist>+ % ';'
 #        <.ws>
-#    }
-#
-#    token arglist {
-#        :my $*GOAL := 'endargs';
-#        :my $*QSIGIL := '';
-#        :my $*ARG_FLAT_OK := 1;
-#        <.ws>
-#        [
-#        | <?stdstopper>
-#        | <EXPR('e=')>
-#        | <?>
-#        ]
 #    }
 #
 #    proto token value { <...> }
