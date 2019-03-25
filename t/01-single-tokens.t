@@ -3,7 +3,7 @@ use v6;
 use Test;
 use Perl6::Parser::Pure;
 
-plan 15;
+plan 4;
 
 # Reuse $pp so that we can make sure state is cleaned up.
 #
@@ -16,7 +16,38 @@ my $*FALL-THROUGH      = True;
 # Most of these will throw warnings, but will actually compile.
 # Warnings aren't the point here.
 
-ok $ppp.to-tree( Q{} ),        Q{'' (the empty file)};
+sub parse( Str $code ) {
+  $ppp.to-tree( $code );
+}
+
+ok parse( Q{} ),         Q{'' (the empty file)};
+ok !parse( qq{\xFFFE} ), Q{'\xFFFE' fails, not BOM};
+ok parse( qq{\xFEFF} ),  Q{'\xFEFF' (someone set us up the BOM)};
+
+subtest 'use vN', {
+  subtest 'no BOM', {
+    subtest 'version variants', {
+      ok parse( Q{use v6} );
+      ok !parse( Q{use v*} ), 'failing test';
+      ok parse( Q{use v6.*} );
+      ok !parse( Q{use v*.6} ), 'failing test';
+      ok parse( Q{use v6.*.2} );
+      ok parse( Q{use v6.2.*} );
+    };
+    ok parse( Q{ use v5} );
+    ok parse( qq{\nuse v41} );
+  };
+
+  subtest 'with BOM', {
+    ok parse( qq{\xFEFFuse v6} );
+    ok parse( qq{\xFEFF use v5} );
+    ok parse( qq{\nuse v41} );
+    ok !parse( qq{ \xFEFFuse v6} ), 'failing test';
+  };
+};
+
+#`{
+
 ok $ppp.to-tree( Q{;} );
 dies-ok { $ppp.to-tree( Q{:} ) }, Q{failing test};
 
@@ -26,6 +57,8 @@ subtest 'version', {
 
   done-testing;
 };
+
+ok $ppp.to-tree( Q{if Þ} ); # XXX Complete this
 
 subtest 'loop', {
 
@@ -215,5 +248,7 @@ subtest 'QUIT', {
     dies-ok { $ppp.to-tree( Q[QUIT }] ) };
   };
 };
+
+}
 
 # vim: ft=perl6
