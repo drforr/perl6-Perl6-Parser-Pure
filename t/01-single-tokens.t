@@ -3,7 +3,7 @@ use v6;
 use Test;
 use Perl6::Parser::Pure;
 
-plan 4;
+plan 6;
 
 # Reuse $pp so that we can make sure state is cleaned up.
 #
@@ -21,9 +21,36 @@ sub parse( Str $code ) {
 }
 
 ok parse( Q{} ),         Q{'' (the empty file)};
-ok !parse( qq{\xFFFE} ), Q{'\xFFFE' fails, not BOM};
-ok parse( qq{\xFEFF} ),  Q{'\xFEFF' (someone set us up the BOM)};
 
+subtest 'failing', {
+  ok !parse( Q{~} );
+  ok !parse( Q{`} );
+  ok !parse( Q{!} );
+  # '@' is legal
+  # '#' is legal
+  # '$' is legal
+  # '%' is legal
+  ok !parse( Q{^} );
+  # '&' is legal
+  # '*' is legal
+  ok !parse( Q{(} );
+  ok !parse( Q{)} );
+  ok !parse( Q{-} );
+  ok !parse( Q{_} );
+  ok !parse( Q{=} );
+  ok !parse( Q{+} );
+
+  ok !parse( Q{:} );
+};
+
+subtest 'BOM', {
+  ok !parse( qq{\xFFFE} ), Q{'\xFFFE' fails, not BOM};
+  ok parse( qq{\xFEFF} ),  Q{'\xFEFF' (someone set us up the BOM)};
+};
+
+# use <version> has nothing to do with use <module>, so it's tested
+# separately, at the start of the file.
+#
 subtest 'use vN', {
   subtest 'no BOM', {
     subtest 'version variants', {
@@ -46,17 +73,30 @@ subtest 'use vN', {
   };
 };
 
-#`{
-
-ok $ppp.to-tree( Q{;} );
-dies-ok { $ppp.to-tree( Q{:} ) }, Q{failing test};
-
-subtest 'version', {
-  ok $ppp.to-tree( Q{use v6} );
-  ok $ppp.to-tree( Q{use v6;} );
-
-  done-testing;
+# Whaddya mean these are empty?
+#
+# Well, ya see, 'use v6.2.*' isn't a statement, but a <lang-version>, which
+# is optional. So technically '' before ';' is the first statement, making ';'
+# the terminator of an empty statement.
+#
+subtest 'empty statement', {
+  ok parse( Q{;} );
+  ok parse( Q{;;} );
+  ok parse( Q{ ;;} );
+  ok parse( Q{; ;} );
+  ok parse( Q{;; } );
+  ok parse( Q{use v6.2.*;} );
+  ok parse( Q{use v6.2.* ;} );
+  ok parse( qq{use v6.2.*\n;} );
 };
+
+subtest 'label', {
+  ok !parse( Q{a:;} );
+  ok parse( Q{a: ;} );
+  ok parse( Q{a: b: ;} );
+};
+
+#`{
 
 ok $ppp.to-tree( Q{if Þ} ); # XXX Complete this
 
