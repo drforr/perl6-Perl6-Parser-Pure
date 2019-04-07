@@ -1,12 +1,13 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
+use Perl6::Parser::Pure;
 
 plan 6;
 
-my $pp                 = Perl6::Parser.new;
-my $ppf                = Perl6::Parser::Factory.new;
+# Probably there's a better design...
+
+my $pp                 = Perl6::Parser::Pure.new;
 my $*CONSISTENCY-CHECK = True;
 my $*UPDATE-RANGES     = True;
 my $*FALL-THROUGH      = True;
@@ -37,8 +38,7 @@ subtest {
 	my $source = Q{(3);2;1};
 	my $edited = Q{();2;1};
 	my $tree   = $pp.to-tree( $source );
-	$ppf.thread( $tree );
-	my $head = $ppf.flatten( $tree );
+	my $head   = $pp.flatten( $tree );
 
 	my $walk-me = $head;
 	my $integer = $head.next(4);
@@ -125,8 +125,7 @@ subtest {
 	my $source = Q{(3);2;1};
 	my $edited = Q{(42);2;1};
 	my $tree   = $pp.to-tree( $source );
-	$ppf.thread( $tree );
-	my $head = $ppf.flatten( $tree );
+	my $head   = $pp.flatten( $tree );
 
 	my $walk-me = $head;
 	my $integer = $head.next(4);
@@ -222,8 +221,7 @@ subtest {
 	my $source = Q{(3);2;1};
 	my $edited = Q{(3);2;};
 	my $tree   = $pp.to-tree( $source );
-	$ppf.thread( $tree );
-	my $head = $ppf.flatten( $tree );
+	my $head   = $pp.flatten( $tree );
 
 	my $walk-me = $head;
 	my $one     = $head;
@@ -277,8 +275,7 @@ subtest {
 	my $source = Q{();2;1};
 	my $edited = Q{(3);2;1};
 	my $tree   = $pp.to-tree( $source );
-	$ppf.thread( $tree );
-	my $head = $ppf.flatten( $tree );
+	my $head   = $pp.flatten( $tree );
 
 	my $walk-me     = $head;
 	my $start-paren = $head.next(3);
@@ -351,8 +348,7 @@ subtest {
 	my $source = Q{();2;1};
 	my $edited = Q{(3);2;1};
 	my $tree   = $pp.to-tree( $source );
-	$ppf.thread( $tree );
-	my $head = $ppf.flatten( $tree );
+	my $head   = $pp.flatten( $tree );
 
 	my $walk-me = $head;
 	my $start-paren = $head.next(4);

@@ -1,19 +1,18 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
-use Perl6::Parser::Factory;
+use Perl6::Parser::Pure;
 
 plan 2;
 
-my $pp                 = Perl6::Parser.new;
-my $ppf                = Perl6::Parser::Factory.new;
+# JMG note that Pure-perl6 parser trees are always threaded...
+
+my $pp                 = Perl6::Parser::Pure.new;
 my $*CONSISTENCY-CHECK = True;
 my $*FALL-THROUGH      = True;
 
 subtest {
   my $parsed = $pp.to-tree( Q{} );
-  $ppf.thread( $parsed );
 
   ok $parsed ~~ Perl6::Document, Q{root is a document};
 

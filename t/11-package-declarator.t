@@ -1,7 +1,7 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
+use Perl6::Parser::Pure;
 
 use lib 't/lib';
 use Utils;
@@ -32,7 +32,7 @@ my $*FALL-THROUGH      = True;
 # lang <name>
 
 subtest {
-  my $pp     = Perl6::Parser.new;
+  my $pp     = Perl6::Parser::Pure.new;
   my $source = gensym-package Q{package %s{}};
   my $tree   = $pp.to-tree( $source );
   

@@ -1,7 +1,7 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
+use Perl6::Parser::Pure;
 
 use lib 't/lib/';
 use Utils;
@@ -21,7 +21,7 @@ subtest {
   plan 3;
   
   subtest {
-    my $pp     = Perl6::Parser.new;
+    my $pp     = Perl6::Parser::Pure.new;
     my $source = gensym-package Q:to[_END_];
     enum %s()
     _END_

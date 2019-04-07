@@ -3,7 +3,7 @@ use v6;
 use Test;
 use Perl6::Parser::Pure;
 
-plan 6;
+plan 7;
 
 # Reuse $pp so that we can make sure state is cleaned up.
 #
@@ -96,199 +96,13 @@ subtest 'label', {
   ok parse( Q{a: b: ;} );
 };
 
-#`{
-
-ok $ppp.to-tree( Q{if Þ} ); # XXX Complete this
-
-subtest 'loop', {
-
-  subtest 'failing', {
-    dies-ok { $ppp.to-tree( Q[for (] ) };
-    dies-ok { $ppp.to-tree( Q[for ( ; ; )] ) };
-    dies-ok { $ppp.to-tree( Q[for my] ) };
-    dies-ok { $ppp.to-tree( Q{loop ( ) {}} ) };
-    dies-ok { $ppp.to-tree( Q{loop ( ; ) {}} ) };
-  };
-
-  ok $ppp.to-tree( Q{loop {}} );
-
-  # Just for the hell of it, run through the permutations.
-  #
-  ok $ppp.to-tree( Q{loop ( ; ; ) {}} ); # 000
-  ok $ppp.to-tree( Q{loop ( Þ ; ; ) {}} ); # 100
-  ok $ppp.to-tree( Q{loop ( ; Þ ; ) {}} ); # 010
-  ok $ppp.to-tree( Q{loop ( Þ ; Þ ; ) {}} ); # 110
-  ok $ppp.to-tree( Q{loop ( ; ; Þ ) {}} ); # 001
-  ok $ppp.to-tree( Q{loop ( Þ ; ; Þ ) {}} ); # 101
-  ok $ppp.to-tree( Q{loop ( ; Þ ; Þ ) {}} ); # 011
-  ok $ppp.to-tree( Q{loop ( Þ ; Þ ; Þ ) {}} ); # 111
+subtest 'if', {
+# ok parse( Q{ if} );
+# ok parse( Q{ if;} );
+# ok parse( Q{ if; } );
+  ok parse( Q{ ifÞ} );
+  ok parse( Q{ ifÞ;} );
+  ok parse( Q{ ifÞ; } );
 };
-
-subtest 'no', {
-  ok $ppp.to-tree( Q{no Module} );
-  ok $ppp.to-tree( Q{no My::Module} );
-  ok $ppp.to-tree( Q{no My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
-  #ok $ppp.to-tree( Q{no My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
-
-  subtest 'full statement', {
-    ok $ppp.to-tree( Q{no Module;} );
-    ok $ppp.to-tree( Q{no My::Module;} );
-  };
-
-  done-testing;
-};
-
-subtest 'require', {
-  ok $ppp.to-tree( Q{require Module} );
-  ok $ppp.to-tree( Q{require My::Module} );
-  ok $ppp.to-tree( Q{require My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
-  #ok $ppp.to-tree( Q{require My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
-  ok $ppp.to-tree( Q{require Þ} );
-
-  subtest 'full statement', {
-    ok $ppp.to-tree( Q{require Module;} );
-    ok $ppp.to-tree( Q{require My::Module;} );
-    ok $ppp.to-tree( Q{require Þ;} );
-  };
-
-  done-testing;
-};
-
-subtest 'need', {
-  subtest 'Module', {
-    ok $ppp.to-tree( Q{need Module} );
-    ok $ppp.to-tree( Q{need My::Module} );
-    ok $ppp.to-tree( Q{need My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
-    #ok $ppp.to-tree( Q{need My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
-    ok $ppp.to-tree( Q{need Module, Other::Module} );
-
-    subtest 'full statement', {
-      ok $ppp.to-tree( Q{need Module;} );
-      ok $ppp.to-tree( Q{need My::Module;} );
-    };
-
-    done-testing;
-  };
-  subtest 'version', {
-
-    subtest 'failing', {
-      dies-ok { $ppp.to-tree( Q{need v6} ) };
-      dies-ok { $ppp.to-tree( Q{need v6.c} ) };
-    };
-
-    ok $ppp.to-tree( Q{need v} ); # This just means "Need module 'v'".
-
-    subtest 'full statement', {
-      ok $ppp.to-tree( Q{need v;} );
-      dies-ok { $ppp.to-tree( Q{need v6;} ) };
-      dies-ok { $ppp.to-tree( Q{need v6.c;} ) };
-    };
-
-    note "It might be useful to catch this for deprecation warnings.";
-
-    done-testing;
-  };
-};
-
-subtest 'import', {
-  ok $ppp.to-tree( Q{import Module} );
-  ok $ppp.to-tree( Q{import My::Module} );
-  ok $ppp.to-tree( Q{import My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
-  #ok $ppp.to-tree( Q{import My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
-  ok $ppp.to-tree( Q{import Module Þ} );
-
-  subtest 'full statement', {
-    ok $ppp.to-tree( Q{import Module;} );
-    ok $ppp.to-tree( Q{import My::Module} );
-  };
-
-  done-testing;
-};
-
-subtest 'use Module', {
-  ok $ppp.to-tree( Q{use Module} );
-  ok $ppp.to-tree( Q{use My::Module} );
-  ok $ppp.to-tree( Q{use My::( Þ)} ); # XXX Woop woop... ( Þ ) is an error!
-  #ok $ppp.to-tree( Q{use My::( Þ )} ); # XXX Woop woop... ( Þ ) is an error!
-
-  subtest 'full statement', {
-    ok $ppp.to-tree( Q{use Module;} );
-    ok $ppp.to-tree( Q{use My::Module;} );
-  };
-
-  done-testing;
-};
-
-subtest 'when', {
-  ok $ppp.to-tree( Q{when {}} );
-
-  subtest 'failing', {
-    dies-ok { $ppp.to-tree( Q{when} ) };
-
-    dies-ok { $ppp.to-tree( Q[when{] ) };
-    dies-ok { $ppp.to-tree( Q[when}] ) };
-
-    dies-ok { $ppp.to-tree( Q[when {] ) };
-    dies-ok { $ppp.to-tree( Q[when }] ) };
-  };
-};
-
-subtest 'default', {
-  ok $ppp.to-tree( Q{default {}} );
-
-  subtest 'failing', {
-    dies-ok { $ppp.to-tree( Q{default} ) };
-
-    dies-ok { $ppp.to-tree( Q[default{] ) };
-    dies-ok { $ppp.to-tree( Q[default}] ) };
-
-    dies-ok { $ppp.to-tree( Q[default {] ) };
-    dies-ok { $ppp.to-tree( Q[default }] ) };
-  };
-};
-
-subtest 'CATCH', {
-  ok $ppp.to-tree( Q{CATCH {}} );
-
-  subtest 'failing', {
-    dies-ok { $ppp.to-tree( Q{CATCH} ) };
-
-    dies-ok { $ppp.to-tree( Q[CATCH{] ) };
-    dies-ok { $ppp.to-tree( Q[CATCH}] ) };
-
-    dies-ok { $ppp.to-tree( Q[CATCH {] ) };
-    dies-ok { $ppp.to-tree( Q[CATCH }] ) };
-  };
-};
-
-subtest 'CONTROL', {
-  ok $ppp.to-tree( Q{CONTROL {}} );
-
-  subtest 'failing', {
-    dies-ok { $ppp.to-tree( Q{CONTROL} ) };
-
-    dies-ok { $ppp.to-tree( Q[CONTROL{] ) };
-    dies-ok { $ppp.to-tree( Q[CONTROL}] ) };
-
-    dies-ok { $ppp.to-tree( Q[CONTROL {] ) };
-    dies-ok { $ppp.to-tree( Q[CONTROL }] ) };
-  };
-};
-
-subtest 'QUIT', {
-  ok $ppp.to-tree( Q{QUIT {}} );
-
-  subtest 'failing', {
-    dies-ok { $ppp.to-tree( Q{QUIT} ) };
-
-    dies-ok { $ppp.to-tree( Q[QUIT{] ) };
-    dies-ok { $ppp.to-tree( Q[QUIT}] ) };
-
-    dies-ok { $ppp.to-tree( Q[QUIT {] ) };
-    dies-ok { $ppp.to-tree( Q[QUIT }] ) };
-  };
-};
-
-}
 
 # vim: ft=perl6

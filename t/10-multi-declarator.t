@@ -1,7 +1,7 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
+use Perl6::Parser::Pure;
 
 use lib 't/lib/';
 use Utils;
@@ -19,7 +19,7 @@ my $*CONSISTENCY-CHECK = True;
 my $*FALL-THROUGH      = True;
 
 subtest {
-  my $pp   = Perl6::Parser.new;
+  my $pp   = Perl6::Parser::Pure.new;
   my $tree = $pp.to-tree( Q:to[_END_] );
   multi Foo{}
   _END_

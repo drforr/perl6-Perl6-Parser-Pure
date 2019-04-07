@@ -1,12 +1,14 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
+use Perl6::Parser::Pure;
 
 use lib 't/lib';
 use Utils;
 
 plan 5;
+
+# Pure-Perl won't have this problem, but confirm anyway.
 
 my $*CONSISTENCY-CHECK = True;
 my $*FALL-THROUGH      = True;

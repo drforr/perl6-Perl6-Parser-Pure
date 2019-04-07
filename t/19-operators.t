@@ -1,7 +1,7 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
+use Perl6::Parser::Pure;
 
 use lib 't/lib/';
 use Utils;
@@ -26,7 +26,7 @@ plan 25;
 # There are also +=, R= and /= variants, those will be in separate files.
 # As will the [+] hyperoperator, as it'll probably get a test suite of its own.
 
-my $pp = Perl6::Parser.new;
+my $pp = Perl6::Parser::Pure.new;
 my $*CONSISTENCY-CHECK = True;
 my $*FALL-THROUGH = True;
 

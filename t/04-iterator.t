@@ -1,11 +1,11 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
+use Perl6::Parser::Pure;
 
 plan 2;
 
-my $pp                 = Perl6::Parser.new;
+my $pp                 = Perl6::Parser::Pure.new;
 my $*CONSISTENCY-CHECK = True;
 my $*FALL-THROUGH      = True;
 

@@ -1,7 +1,7 @@
 use v6;
 
 use Test;
-use Perl6::Parser;
+use Perl6::Parser::Pure;
 
 use lib 't/lib';
 use Utils;
@@ -18,7 +18,7 @@ my $*FALL-THROUGH      = True;
 # my regex Foo { } # 'regex' is a regex_declaration
 
 subtest {
-  my $pp     = Perl6::Parser.new;
+  my $pp     = Perl6::Parser::Pure.new;
   my $source = Q{my token Foo{a}};
   my $tree   = $pp.to-tree( $source );
   
